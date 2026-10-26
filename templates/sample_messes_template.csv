@@ -1,0 +1,6 @@
+name,cuisine,dietary,service_type,area,nearest_landmark,monthly_price_from,per_meal_price_from,meals_served,description,status
+"Annapoorna Coastal Mess","South Indian & Coastal","Pure Veg","Dine-in Mess","Tiger Circle","Opposite Bus Stand",3200,60,"Breakfast, Lunch, Dinner","Authentic Udupi style vegetarian unlimited meals. Fresh coconut chutneys and hot sambar.",published
+"Malabar Treats & Tiffin","Kerala & Coastal","Veg & Non-Veg","Dine-in & Delivery","Saralebettu Road","Near MIT Gate 1",3800,75,"Lunch, Dinner","Specializes in authentic Malabar biryanis, fish curry meals, and daily tiffin boxes.",published
+"Swadisht North Indian Bhojnalaya","North Indian Punjabi","Pure Veg","Dine-in Mess","Vidyaratna Nagar","Near Syndicate Bank",3400,65,"Lunch, Dinner","Unlimited phulkas with ghee, seasonal sabzis, dal tadka, and homestyle chaas.",published
+"Konkan Flavors Mess","Mangalore & Konkani","Veg & Non-Veg","Dine-in Mess","Eshwar Nagar","Behind KMC Hospital",3600,70,"Lunch, Dinner","Homestyle fish thalis, chicken curries, and daily vegetarian meals with boiled rice.",published
+"Ghar Ka Khana Tiffin Services","Homestyle Multi-Cuisine","Veg & Non-Veg","Tiffin & Delivery","Saralebettu Road","Near Inox",3300,60,"Lunch, Dinner","Hot dabba delivery directly to your PG or hostel room with roti, sabzi, dal, and rice.",published
