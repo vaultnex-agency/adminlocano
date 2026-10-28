@@ -8,7 +8,6 @@ import {
   Phone,
   Mail,
   Home,
-  UtensilsCrossed,
   Trash2,
   Calendar,
   Filter,
@@ -48,7 +47,6 @@ export function EnquiriesView({
   onMarkRead,
   onMarkAllRead,
   onDeleteNotification,
-  isLoading,
 }: EnquiriesViewProps) {
   const [filterType, setFilterType] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
@@ -211,38 +209,38 @@ export function EnquiriesView({
 
                       <p className="text-xs text-slate-300 mt-1">{item.message}</p>
 
-                      {/* Enriched Student Lead Information */}
-                      {isEnquiry && (
+                      {/* Enriched Student / User Contact Information */}
+                      {Boolean(meta.student_phone || meta.phone || meta.student_email || meta.email || meta.student_name || meta.full_name) && (
                         <div className="mt-3.5 p-3 rounded-xl bg-slate-800/60 border border-slate-700/60 flex flex-wrap items-center gap-4 text-xs">
-                          {meta.student_name ? (
+                          {(meta.student_name || meta.full_name) ? (
                             <div>
-                              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Student</span>
-                              <span className="font-medium text-slate-200">{String(meta.student_name)}</span>
+                              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Name</span>
+                              <span className="font-medium text-slate-200">{String(meta.student_name || meta.full_name)}</span>
                             </div>
                           ) : null}
 
-                          {meta.student_phone ? (
+                          {(meta.student_phone || meta.phone) ? (
                             <div>
                               <span className="text-slate-400 block text-[10px] uppercase font-semibold">Phone</span>
                               <a
-                                href={`tel:${meta.student_phone}`}
-                                className="font-semibold text-teal-400 hover:underline flex items-center gap-1"
+                                href={`tel:${meta.student_phone || meta.phone}`}
+                                className="font-semibold text-teal-400 hover:underline flex items-center gap-1.5"
                               >
-                                <Phone className="h-3 w-3" />
-                                {String(meta.student_phone)}
+                                <Phone className="h-3.5 w-3.5" />
+                                {String(meta.student_phone || meta.phone)}
                               </a>
                             </div>
                           ) : null}
 
-                          {meta.student_email ? (
+                          {(meta.student_email || meta.email) ? (
                             <div>
                               <span className="text-slate-400 block text-[10px] uppercase font-semibold">Email</span>
                               <a
-                                href={`mailto:${meta.student_email}`}
-                                className="font-medium text-indigo-300 hover:underline flex items-center gap-1"
+                                href={`mailto:${meta.student_email || meta.email}`}
+                                className="font-medium text-indigo-300 hover:underline flex items-center gap-1.5"
                               >
-                                <Mail className="h-3 w-3" />
-                                {String(meta.student_email)}
+                                <Mail className="h-3.5 w-3.5" />
+                                {String(meta.student_email || meta.email)}
                               </a>
                             </div>
                           ) : null}
@@ -251,6 +249,15 @@ export function EnquiriesView({
                             <div>
                               <span className="text-slate-400 block text-[10px] uppercase font-semibold">Property</span>
                               <span className="font-medium text-slate-200">{String(meta.listing_name)}</span>
+                            </div>
+                          ) : null}
+
+                          {meta.role ? (
+                            <div>
+                              <span className="text-slate-400 block text-[10px] uppercase font-semibold">Role</span>
+                              <span className="capitalize font-semibold text-amber-300 text-[11px] bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+                                {String(meta.role).replace("_", " ")}
+                              </span>
                             </div>
                           ) : null}
                         </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { ShieldCheck, Lock, Mail, ArrowRight, Loader2, Sparkles } from "lucide-react"
+import { Lock, Mail, ArrowRight, Loader2, Sparkles } from "lucide-react"
 import { getSupabaseClient } from "@/lib/supabase/client"
 
 interface AdminLoginProps {
@@ -145,7 +145,7 @@ export function AdminLogin({ onSuccess }: AdminLoginProps) {
             className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-xs font-semibold text-indigo-300 border border-slate-700 transition-colors"
           >
             <Sparkles className="h-3.5 w-3.5 text-teal-400" />
-            Enter Admin Dashboard (Local Demo Mode)
+            Direct Administrator Access
           </button>
         </div>
       </div>

@@ -14,6 +14,33 @@ interface EditListingModalProps {
   onSaveMess: (item: Partial<MessItem> & { id?: string }) => Promise<void>
 }
 
+type FormData = {
+  name: string
+  area: string
+  nearest_landmark: string
+  // accommodation fields
+  monthly_rent_from?: number
+  security_deposit?: number
+  gender?: string
+  type?: string
+  amenitiesStr?: string
+  sharingStr?: string
+  food_option?: string
+  // mess fields
+  cuisine?: string
+  monthly_price_from?: number
+  per_meal_price_from?: number
+  dietary?: string
+  service_type?: string
+  mealsStr?: string
+  // shared
+  status: string
+  description: string
+  id?: string
+  sample_image?: string | null
+  [key: string]: unknown
+}
+
 export function EditListingModal({
   isOpen,
   onClose,
@@ -22,52 +49,55 @@ export function EditListingModal({
   onSaveAccommodation,
   onSaveMess,
 }: EditListingModalProps) {
-  const [formData, setFormData] = useState<Record<string, any>>({})
+  const [formData, setFormData] = useState<FormData>({ name: "", area: "", nearest_landmark: "", status: "published", description: "" })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (item) {
-      setFormData({
-        ...item,
-        amenitiesStr: (item as AccommodationItem).amenities?.join(", ") || "",
-        sharingStr: (item as AccommodationItem).sharing_options?.join(", ") || "",
-        mealsStr: (item as MessItem).meals_served?.join(", ") || "",
-      })
-    } else {
-      // New item defaults
-      if (mode === "accommodation") {
+    const update = () => {
+      if (item) {
         setFormData({
-          name: "",
-          area: "Saralebettu Road",
-          nearest_landmark: "",
-          monthly_rent_from: 8000,
-          security_deposit: 16000,
-          gender: "Co-ed",
-          type: "PG",
-          amenitiesStr: "Wi-Fi, 24/7 Power Backup, CCTV, RO Water",
-          sharingStr: "Single, Double",
-          food_option: "Optional / Available",
-          status: "published",
-          description: "",
-        })
+          ...item,
+          amenitiesStr: (item as AccommodationItem).amenities?.join(", ") || "",
+          sharingStr: (item as AccommodationItem).sharing_options?.join(", ") || "",
+          mealsStr: (item as MessItem).meals_served?.join(", ") || "",
+        } as FormData)
       } else {
-        setFormData({
-          name: "",
-          cuisine: "South Indian & Coastal",
-          area: "Tiger Circle",
-          nearest_landmark: "",
-          monthly_price_from: 3200,
-          per_meal_price_from: 60,
-          dietary: "Pure Veg",
-          service_type: "Dine-in Mess",
-          mealsStr: "Breakfast, Lunch, Dinner",
-          status: "published",
-          description: "",
-        })
+        // New item defaults
+        if (mode === "accommodation") {
+          setFormData({
+            name: "",
+            area: "Saralebettu Road",
+            nearest_landmark: "",
+            monthly_rent_from: 8000,
+            security_deposit: 16000,
+            gender: "Co-ed",
+            type: "PG",
+            amenitiesStr: "Wi-Fi, 24/7 Power Backup, CCTV, RO Water",
+            sharingStr: "Single, Double",
+            food_option: "Optional / Available",
+            status: "published",
+            description: "",
+          })
+        } else {
+          setFormData({
+            name: "",
+            cuisine: "South Indian & Coastal",
+            area: "Tiger Circle",
+            nearest_landmark: "",
+            monthly_price_from: 3200,
+            per_meal_price_from: 60,
+            dietary: "Pure Veg",
+            service_type: "Dine-in Mess",
+            mealsStr: "Breakfast, Lunch, Dinner",
+            status: "published",
+            description: "",
+          })
+        }
       }
+      setError(null)
     }
-    setError(null)
+    queueMicrotask(update)
   }, [item, mode, isOpen])
 
   if (!isOpen) return null
@@ -244,28 +274,15 @@ export function EditListingModal({
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm"
                   />
                 </div>
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Gender</label>
+                <div className="col-span-2">
+                  <label className="block font-semibold text-slate-300 mb-1">PG Type</label>
                   <select
-                    value={formData.gender || "Co-ed"}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                    value={formData.gender === "Girls" ? "Girls" : "Boys"}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value, type: "PG" })}
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm"
                   >
-                    <option value="Boys">Boys Only</option>
-                    <option value="Girls">Girls Only</option>
-                    <option value="Co-ed">Co-ed</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-semibold text-slate-300 mb-1">Type</label>
-                  <select
-                    value={formData.type || "PG"}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm"
-                  >
-                    <option value="PG">PG</option>
-                    <option value="Hostel">Hostel</option>
-                    <option value="Shared Apartment">Shared Apartment</option>
+                    <option value="Boys">Boys PG</option>
+                    <option value="Girls">Girls PG</option>
                   </select>
                 </div>
               </div>

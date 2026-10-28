@@ -46,7 +46,6 @@ export function MessesView({
   onEdit,
   onAddNew,
   onNavigateBulk,
-  isLoading,
 }: MessesViewProps) {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")

@@ -10,11 +10,12 @@ import { BulkImporterView } from "@/components/BulkImporterView"
 import { EditListingModal } from "@/components/EditListingModal"
 import { AdminLogin } from "@/components/AdminLogin"
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client"
-import { SAMPLE_NOTIFICATIONS } from "@/lib/sample-data"
 import { ParsedAccommodationRow, ParsedMessRow } from "@/lib/csv-helper"
 
 export default function AdminPage() {
-  const [adminEmail, setAdminEmail] = useState<string | null>(null)
+  const [adminEmail, setAdminEmail] = useState<string | null>(
+    () => (typeof window !== "undefined" ? localStorage.getItem("locano_admin_session") : null)
+  )
   const [activeTab, setActiveTab] = useState<AdminTab>("overview")
   const [isLoading, setIsLoading] = useState(true)
 
@@ -28,13 +29,7 @@ export default function AdminPage() {
   const [editItem, setEditItem] = useState<AccommodationItem | MessItem | null>(null)
   const [editMode, setEditMode] = useState<"accommodation" | "mess">("accommodation")
 
-  // Check auth session on load
-  useEffect(() => {
-    const saved = localStorage.getItem("locano_admin_session")
-    if (saved) {
-      setAdminEmail(saved)
-    }
-  }, [])
+
 
   const handleLoginSuccess = (email: string) => {
     setAdminEmail(email)
@@ -56,8 +51,7 @@ export default function AdminPage() {
     const supabase = getSupabaseClient()
 
     if (!supabase) {
-      // Fallback sample data
-      setNotifications(SAMPLE_NOTIFICATIONS as AdminNotificationItem[])
+      setNotifications([])
       setIsLoading(false)
       return
     }
@@ -69,10 +63,10 @@ export default function AdminPage() {
         .select("*")
         .order("created_at", { ascending: false })
 
-      if (notifData && notifData.length > 0) {
+      if (notifData) {
         setNotifications(notifData as AdminNotificationItem[])
       } else {
-        setNotifications(SAMPLE_NOTIFICATIONS as AdminNotificationItem[])
+        setNotifications([])
       }
 
       // 2. Fetch accommodations
@@ -96,7 +90,7 @@ export default function AdminPage() {
       }
     } catch (err) {
       console.error("Error loading admin data:", err)
-      setNotifications(SAMPLE_NOTIFICATIONS as AdminNotificationItem[])
+      setNotifications([])
     } finally {
       setIsLoading(false)
     }
@@ -104,7 +98,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (adminEmail) {
-      loadData()
+      void (async () => { await loadData() })()
     }
   }, [adminEmail, loadData])
 
@@ -142,7 +136,13 @@ export default function AdminPage() {
     setAccommodations((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)))
     const supabase = getSupabaseClient()
     if (supabase) {
-      await supabase.from("accommodation_listings").update({ status }).eq("id", id)
+      const { error } = await supabase.from("accommodation_listings").update({ status }).eq("id", id)
+      if (error) {
+        console.error("Update status error:", error)
+        alert("Database Error: " + error.message)
+      } else {
+        await loadData()
+      }
     }
   }
 
@@ -151,7 +151,13 @@ export default function AdminPage() {
     setAccommodations((prev) => prev.filter((a) => a.id !== id))
     const supabase = getSupabaseClient()
     if (supabase) {
-      await supabase.from("accommodation_listings").delete().eq("id", id)
+      const { error } = await supabase.from("accommodation_listings").delete().eq("id", id)
+      if (error) {
+        console.error("Delete error:", error)
+        alert("Database Error: " + error.message)
+      } else {
+        await loadData()
+      }
     }
   }
 
@@ -179,7 +185,7 @@ export default function AdminPage() {
       setAccommodations((prev) => [newAcc, ...prev])
 
       if (supabase) {
-        await supabase.from("accommodation_listings").insert({
+        const { error } = await supabase.from("accommodation_listings").insert({
           id: newId,
           name: newAcc.name,
           area: newAcc.area,
@@ -193,7 +199,15 @@ export default function AdminPage() {
           food_option: newAcc.food_option,
           status: newAcc.status,
           description: newAcc.description,
+          is_demo: false,
         })
+
+        if (error) {
+          console.error("Insert accommodation error:", error)
+          alert("Database Error: " + error.message)
+          return
+        }
+        await loadData()
       }
     } else {
       // Update existing
@@ -201,7 +215,7 @@ export default function AdminPage() {
         prev.map((a) => (a.id === item.id ? ({ ...a, ...item } as AccommodationItem) : a))
       )
       if (supabase) {
-        await supabase
+        const { error } = await supabase
           .from("accommodation_listings")
           .update({
             name: item.name,
@@ -216,8 +230,16 @@ export default function AdminPage() {
             food_option: item.food_option,
             status: item.status,
             description: item.description,
+            is_demo: false,
           })
           .eq("id", item.id)
+
+        if (error) {
+          console.error("Update accommodation error:", error)
+          alert("Database Error: " + error.message)
+          return
+        }
+        await loadData()
       }
     }
   }
@@ -229,7 +251,13 @@ export default function AdminPage() {
     setMesses((prev) => prev.map((m) => (m.id === id ? { ...m, status } : m)))
     const supabase = getSupabaseClient()
     if (supabase) {
-      await supabase.from("mess_listings").update({ status }).eq("id", id)
+      const { error } = await supabase.from("mess_listings").update({ status }).eq("id", id)
+      if (error) {
+        console.error("Update mess status error:", error)
+        alert("Database Error: " + error.message)
+      } else {
+        await loadData()
+      }
     }
   }
 
@@ -238,7 +266,13 @@ export default function AdminPage() {
     setMesses((prev) => prev.filter((m) => m.id !== id))
     const supabase = getSupabaseClient()
     if (supabase) {
-      await supabase.from("mess_listings").delete().eq("id", id)
+      const { error } = await supabase.from("mess_listings").delete().eq("id", id)
+      if (error) {
+        console.error("Delete mess error:", error)
+        alert("Database Error: " + error.message)
+      } else {
+        await loadData()
+      }
     }
   }
 
@@ -265,7 +299,7 @@ export default function AdminPage() {
       setMesses((prev) => [newMess, ...prev])
 
       if (supabase) {
-        await supabase.from("mess_listings").insert({
+        const { error } = await supabase.from("mess_listings").insert({
           id: newId,
           name: newMess.name,
           cuisine: newMess.cuisine,
@@ -278,13 +312,21 @@ export default function AdminPage() {
           meals_served: newMess.meals_served,
           status: newMess.status,
           description: newMess.description,
+          is_demo: false,
         })
+
+        if (error) {
+          console.error("Insert mess error:", error)
+          alert("Database Error: " + error.message)
+          return
+        }
+        await loadData()
       }
     } else {
       // Update existing
       setMesses((prev) => prev.map((m) => (m.id === item.id ? ({ ...m, ...item } as MessItem) : m)))
       if (supabase) {
-        await supabase
+        const { error } = await supabase
           .from("mess_listings")
           .update({
             name: item.name,
@@ -298,8 +340,16 @@ export default function AdminPage() {
             meals_served: item.meals_served,
             status: item.status,
             description: item.description,
+            is_demo: false,
           })
           .eq("id", item.id)
+
+        if (error) {
+          console.error("Update mess error:", error)
+          alert("Database Error: " + error.message)
+          return
+        }
+        await loadData()
       }
     }
   }
@@ -324,6 +374,7 @@ export default function AdminPage() {
       status: r.status,
       description: r.description || "",
       sample_image: r.sample_image || "/hero-coast.png",
+      is_demo: false,
     }))
 
     // Update local state immediately
@@ -334,8 +385,15 @@ export default function AdminPage() {
       const batchSize = 25
       for (let i = 0; i < mappedItems.length; i += batchSize) {
         const batch = mappedItems.slice(i, i + batchSize)
-        await supabase.from("accommodation_listings").insert(batch as any)
+        const { error } = await supabase.from("accommodation_listings").insert(batch as unknown as Parameters<ReturnType<typeof supabase.from>["insert"]>[0])
+        if (error) {
+          console.error("Bulk insert accommodation error:", error)
+          alert("Database Error: " + error.message)
+          return { success: i, failed: mappedItems.length - i }
+        }
       }
+
+      await loadData()
 
       // Add audit notification
       await supabase.from("admin_notifications").insert({
@@ -366,6 +424,7 @@ export default function AdminPage() {
       status: r.status,
       description: r.description || "",
       sample_image: r.sample_image || "/mess-tiffin.jpg",
+      is_demo: false,
     }))
 
     setMesses((prev) => [...mappedItems, ...prev])
@@ -374,8 +433,15 @@ export default function AdminPage() {
       const batchSize = 25
       for (let i = 0; i < mappedItems.length; i += batchSize) {
         const batch = mappedItems.slice(i, i + batchSize)
-        await supabase.from("mess_listings").insert(batch as any)
+        const { error } = await supabase.from("mess_listings").insert(batch as unknown as Parameters<ReturnType<typeof supabase.from>["insert"]>[0])
+        if (error) {
+          console.error("Bulk insert mess error:", error)
+          alert("Database Error: " + error.message)
+          return { success: i, failed: mappedItems.length - i }
+        }
       }
+
+      await loadData()
 
       await supabase.from("admin_notifications").insert({
         notification_type: "listing_submitted",

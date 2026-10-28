@@ -212,7 +212,7 @@ export function BulkImporterView({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white transition-colors"
           >
             <Sparkles className="h-3.5 w-3.5" />
-            Try Demo Data
+            Load Sample Template Rows
           </button>
         </div>
       </div>

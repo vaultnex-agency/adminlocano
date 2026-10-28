@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { Home, UtensilsCrossed, Bell, CheckCircle2, Clock } from "lucide-react"
+import { Home, UtensilsCrossed, Bell, CheckCircle2 } from "lucide-react"
 
 interface StatsCardsProps {
   totalAccommodations: number

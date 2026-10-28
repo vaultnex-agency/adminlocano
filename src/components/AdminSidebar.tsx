@@ -92,7 +92,7 @@ export function AdminSidebar({
                   isLive ? "bg-emerald-400 shadow-sm shadow-emerald-400/80 animate-ping" : "bg-amber-400"
                 }`}
               />
-              {isLive ? "Database Online" : "Preview Mode"}
+              {isLive ? "Database Connected" : "Connecting..."}
             </span>
             <ShieldCheck className="h-3.5 w-3.5 text-indigo-400" />
           </div>

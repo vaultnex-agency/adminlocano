@@ -10,10 +10,7 @@ import {
   Clock,
   Edit2,
   Trash2,
-  ExternalLink,
   MapPin,
-  Users,
-  ShieldAlert,
 } from "lucide-react"
 
 export interface AccommodationItem {
@@ -51,7 +48,6 @@ export function AccommodationsView({
   onEdit,
   onAddNew,
   onNavigateBulk,
-  isLoading,
 }: AccommodationsViewProps) {
   const [search, setSearch] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
@@ -129,16 +125,15 @@ export function AccommodationsView({
             <option value="rejected">Rejected</option>
           </select>
 
-          {/* Gender select */}
+          {/* PG Type select */}
           <select
             value={genderFilter}
             onChange={(e) => setGenderFilter(e.target.value)}
             className="bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500"
           >
-            <option value="all">All Genders</option>
-            <option value="Boys">Boys Only</option>
-            <option value="Girls">Girls Only</option>
-            <option value="Co-ed">Co-ed</option>
+            <option value="all">All PG Types</option>
+            <option value="Boys">Boys PG</option>
+            <option value="Girls">Girls PG</option>
           </select>
         </div>
       </div>
@@ -160,7 +155,7 @@ export function AccommodationsView({
                 <th className="py-3 px-4">Property</th>
                 <th className="py-3 px-4">Area & Landmark</th>
                 <th className="py-3 px-4">Rent / Mo</th>
-                <th className="py-3 px-4">Gender & Type</th>
+                <th className="py-3 px-4">PG Type</th>
                 <th className="py-3 px-4">Status</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
@@ -196,22 +191,17 @@ export function AccommodationsView({
                       <span className="text-slate-400 text-xs"> /mo</span>
                     </td>
 
-                    {/* Gender & Type */}
+                    {/* PG Type */}
                     <td className="py-3.5 px-4 text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <span
-                          className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${
-                            item.gender === "Boys"
-                              ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
-                              : item.gender === "Girls"
-                              ? "bg-pink-500/10 text-pink-400 border border-pink-500/20"
-                              : "bg-purple-500/10 text-purple-400 border border-purple-500/20"
-                          }`}
-                        >
-                          {item.gender}
-                        </span>
-                        <span className="text-slate-400">{item.type}</span>
-                      </div>
+                      <span
+                        className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${
+                          item.gender === "Girls"
+                            ? "bg-pink-500/10 text-pink-400 border border-pink-500/20"
+                            : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                        }`}
+                      >
+                        {item.gender === "Girls" ? "Girls PG" : "Boys PG"}
+                      </span>
                     </td>
 
                     {/* Status */}
