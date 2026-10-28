@@ -19,22 +19,22 @@ type FormData = {
   area: string
   nearest_landmark: string
   // accommodation fields
-  monthly_rent_from?: number
-  security_deposit?: number
-  gender?: string
-  type?: string
+  monthly_rent_from?: number | string
+  security_deposit?: number | string
+  gender?: "Boys" | "Girls" | "Co-ed"
+  type?: "PG" | "Hostel" | "Shared Apartment"
   amenitiesStr?: string
   sharingStr?: string
   food_option?: string
   // mess fields
   cuisine?: string
-  monthly_price_from?: number
-  per_meal_price_from?: number
-  dietary?: string
-  service_type?: string
+  monthly_price_from?: number | string
+  per_meal_price_from?: number | string
+  dietary?: "Pure Veg" | "Veg & Non-Veg"
+  service_type?: "Dine-in Mess" | "Tiffin & Delivery" | "Dine-in & Delivery"
   mealsStr?: string
   // shared
-  status: string
+  status: "published" | "pending" | "rejected" | "archived"
   description: string
   id?: string
   sample_image?: string | null
@@ -71,7 +71,7 @@ export function EditListingModal({
             nearest_landmark: "",
             monthly_rent_from: 8000,
             security_deposit: 16000,
-            gender: "Co-ed",
+            gender: "Boys",
             type: "PG",
             amenitiesStr: "Wi-Fi, 24/7 Power Backup, CCTV, RO Water",
             sharingStr: "Single, Double",
@@ -217,12 +217,18 @@ export function EditListingModal({
               <label className="block font-semibold text-slate-300 mb-1">Status</label>
               <select
                 value={formData.status || "published"}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    status: e.target.value as "published" | "pending" | "rejected" | "archived",
+                  })
+                }
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm"
               >
                 <option value="published">Published</option>
                 <option value="pending">Pending</option>
                 <option value="rejected">Rejected</option>
+                <option value="archived">Archived</option>
               </select>
             </div>
           </div>
@@ -275,14 +281,21 @@ export function EditListingModal({
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className="block font-semibold text-slate-300 mb-1">PG Type</label>
+                  <label className="block font-semibold text-slate-300 mb-1">PG Type / Gender</label>
                   <select
-                    value={formData.gender === "Girls" ? "Girls" : "Boys"}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value, type: "PG" })}
+                    value={formData.gender || "Boys"}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        gender: e.target.value as "Boys" | "Girls" | "Co-ed",
+                        type: "PG",
+                      })
+                    }
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm"
                   >
                     <option value="Boys">Boys PG</option>
                     <option value="Girls">Girls PG</option>
+                    <option value="Co-ed">Co-ed PG</option>
                   </select>
                 </div>
               </div>
@@ -350,7 +363,12 @@ export function EditListingModal({
                   <label className="block font-semibold text-slate-300 mb-1">Dietary</label>
                   <select
                     value={formData.dietary || "Pure Veg"}
-                    onChange={(e) => setFormData({ ...formData, dietary: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        dietary: e.target.value as "Pure Veg" | "Veg & Non-Veg",
+                      })
+                    }
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm"
                   >
                     <option value="Pure Veg">Pure Veg</option>
@@ -361,7 +379,15 @@ export function EditListingModal({
                   <label className="block font-semibold text-slate-300 mb-1">Service Type</label>
                   <select
                     value={formData.service_type || "Dine-in Mess"}
-                    onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        service_type: e.target.value as
+                          | "Dine-in Mess"
+                          | "Tiffin & Delivery"
+                          | "Dine-in & Delivery",
+                      })
+                    }
                     className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 text-sm"
                   >
                     <option value="Dine-in Mess">Dine-in Mess</option>

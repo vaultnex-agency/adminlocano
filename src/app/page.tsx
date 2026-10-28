@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useEffect, useCallback } from "react"
+import { Loader2 } from "lucide-react"
 import { AdminSidebar, AdminTab } from "@/components/AdminSidebar"
 import { StatsCards } from "@/components/StatsCards"
 import { EnquiriesView, AdminNotificationItem } from "@/components/EnquiriesView"
@@ -13,9 +14,8 @@ import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import { ParsedAccommodationRow, ParsedMessRow } from "@/lib/csv-helper"
 
 export default function AdminPage() {
-  const [adminEmail, setAdminEmail] = useState<string | null>(
-    () => (typeof window !== "undefined" ? localStorage.getItem("locano_admin_session") : null)
-  )
+  const [isMounted, setIsMounted] = useState(false)
+  const [adminEmail, setAdminEmail] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<AdminTab>("overview")
   const [isLoading, setIsLoading] = useState(true)
 
@@ -97,6 +97,14 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
+    const saved = localStorage.getItem("locano_admin_session")
+    if (saved) {
+      setAdminEmail(saved)
+    }
+    setIsMounted(true)
+  }, [])
+
+  useEffect(() => {
     if (adminEmail) {
       void (async () => { await loadData() })()
     }
@@ -173,7 +181,7 @@ export default function AdminPage() {
         nearest_landmark: item.nearest_landmark || "",
         monthly_rent_from: item.monthly_rent_from || 8000,
         security_deposit: item.security_deposit || 16000,
-        gender: item.gender || "Co-ed",
+        gender: item.gender || "Boys",
         type: item.type || "PG",
         amenities: item.amenities || [],
         sharing_options: item.sharing_options || [],
@@ -453,6 +461,14 @@ export default function AdminPage() {
     }
 
     return { success: items.length, failed: 0 }
+  }
+
+  if (!isMounted) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 text-slate-400">
+        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+      </div>
+    )
   }
 
   // Not logged in -> Show sleek Admin Login
