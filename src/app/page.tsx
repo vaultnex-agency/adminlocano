@@ -508,7 +508,7 @@ export default function AdminPage() {
       area: r.area,
       nearest_landmark: r.nearest_landmark || "",
       monthly_rent_from: r.monthly_rent_from,
-      security_deposit: r.security_deposit || r.monthly_rent_from * 2,
+      security_deposit: typeof r.security_deposit === "number" && r.security_deposit <= 100000 ? r.security_deposit : r.monthly_rent_from * 2,
       gender: r.gender,
       type: r.type,
       amenities: r.amenities || [],
