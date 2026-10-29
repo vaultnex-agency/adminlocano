@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react"
 import { X, Save, Home, UtensilsCrossed, Loader2 } from "lucide-react"
 import { AccommodationItem } from "./AccommodationsView"
 import { MessItem } from "./MessesView"
+import { ImageUploader } from "./ImageUploader"
 
 interface EditListingModalProps {
   isOpen: boolean
@@ -12,6 +13,7 @@ interface EditListingModalProps {
   mode: "accommodation" | "mess"
   onSaveAccommodation: (item: Partial<AccommodationItem> & { id?: string }) => Promise<void>
   onSaveMess: (item: Partial<MessItem> & { id?: string }) => Promise<void>
+  onReplaceListingImage?: (id: string, mode: "accommodation" | "mess", imageUrl: string) => Promise<void>
 }
 
 type FormData = {
@@ -48,6 +50,7 @@ export function EditListingModal({
   mode,
   onSaveAccommodation,
   onSaveMess,
+  onReplaceListingImage,
 }: EditListingModalProps) {
   const [formData, setFormData] = useState<FormData>({ name: "", area: "", nearest_landmark: "", status: "published", description: "" })
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -58,6 +61,7 @@ export function EditListingModal({
       if (item) {
         setFormData({
           ...item,
+          sample_image: item.sample_image || (item as unknown as { images?: string[] }).images?.[0] || null,
           amenitiesStr: (item as AccommodationItem).amenities?.join(", ") || "",
           sharingStr: (item as AccommodationItem).sharing_options?.join(", ") || "",
           mealsStr: (item as MessItem).meals_served?.join(", ") || "",
@@ -78,6 +82,7 @@ export function EditListingModal({
             food_option: "Optional / Available",
             status: "published",
             description: "",
+            sample_image: null,
           })
         } else {
           setFormData({
@@ -92,6 +97,7 @@ export function EditListingModal({
             mealsStr: "Breakfast, Lunch, Dinner",
             status: "published",
             description: "",
+            sample_image: null,
           })
         }
       }
@@ -132,6 +138,7 @@ export function EditListingModal({
           food_option: formData.food_option,
           status: formData.status,
           description: formData.description,
+          sample_image: formData.sample_image || (item as AccommodationItem)?.sample_image || null,
         })
       } else {
         const meals_served = formData.mealsStr
@@ -151,6 +158,7 @@ export function EditListingModal({
           meals_served,
           status: formData.status,
           description: formData.description,
+          sample_image: formData.sample_image || (item as MessItem)?.sample_image || null,
         })
       }
       onClose()
@@ -232,6 +240,23 @@ export function EditListingModal({
               </select>
             </div>
           </div>
+
+          {/* Image Selection, Preview & Upload */}
+          <ImageUploader
+            currentImageUrl={formData.sample_image}
+            mode={mode}
+            listingId={item?.id}
+            onImageUploaded={(url) => setFormData((prev) => ({ ...prev, sample_image: url }))}
+            onImageRemoved={() => setFormData((prev) => ({ ...prev, sample_image: null }))}
+            onDirectReplace={
+              item?.id && onReplaceListingImage
+                ? async (url) => {
+                    await onReplaceListingImage(item.id, mode, url)
+                    setFormData((prev) => ({ ...prev, sample_image: url }))
+                  }
+                : undefined
+            }
+          />
 
           {/* Location */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

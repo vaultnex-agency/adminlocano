@@ -1,6 +1,8 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
-export type UserRole = "student" | "pg_owner" | "admin"
+export type UserRole = "student" | "pg_owner" | "vendor" | "admin"
+export type VendorType = "pg_vendor" | "food_mess_vendor"
+export type VendorStatus = "pending" | "approved" | "rejected"
 export type ListingStatus = "pending" | "published" | "rejected" | "archived"
 export type AccommodationType = "PG" | "Hostel" | "Shared Apartment"
 export type GenderPreference = "Boys" | "Girls" | "Co-ed"
@@ -13,6 +15,7 @@ export type NotificationType =
   | "listing_approved"
   | "listing_rejected"
   | "enquiry_created"
+  | "vendor_application"
 
 export interface Database {
   public: {
@@ -67,17 +70,40 @@ export interface Database {
         Update: { id?: string; read?: boolean; [key: string]: unknown }
         Relationships: []
       }
+      vendor_applications: {
+        Row: {
+          id: string; user_id: string; vendor_type: VendorType; status: VendorStatus
+          business_name: string; business_address: string; business_phone: string
+          pg_property_name: string | null; pg_area: string | null
+          pg_gender_preference: string | null; pg_approximate_rent: number | null
+          mess_name: string | null; mess_area: string | null
+          mess_cuisine: string | null; mess_dietary_type: string | null
+          mess_approximate_price: number | null
+          additional_notes: string; admin_notes: string
+          reviewed_by: string | null; reviewed_at: string | null
+          created_at: string; updated_at: string
+        }
+        Insert: { [key: string]: unknown }
+        Update: { id?: string; status?: VendorStatus; admin_notes?: string; reviewed_by?: string; reviewed_at?: string; [key: string]: unknown }
+        Relationships: []
+      }
     }
     Views: { [_ in never]: never }
     Functions: {
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       log_user_login: { Args: Record<PropertyKey, never>; Returns: void }
+      is_approved_vendor: { Args: Record<PropertyKey, never>; Returns: boolean }
+      check_rate_limit: {
+        Args: { p_key: string; p_window_seconds?: number; p_max_requests?: number }
+        Returns: Json
+      }
     }
     Enums: {
       user_role: UserRole; listing_status: ListingStatus
       accommodation_type: AccommodationType; gender_preference: GenderPreference
       dietary_type: DietaryType; service_type: ServiceType
       notification_type: NotificationType
+      vendor_type: VendorType; vendor_status: VendorStatus
     }
   }
 }

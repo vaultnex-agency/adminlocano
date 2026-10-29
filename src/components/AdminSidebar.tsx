@@ -7,12 +7,13 @@ import {
   Home,
   UtensilsCrossed,
   UploadCloud,
+  Store,
   LogOut,
   ShieldCheck,
   ExternalLink,
 } from "lucide-react"
 
-export type AdminTab = "overview" | "enquiries" | "accommodations" | "messes" | "bulk-import"
+export type AdminTab = "overview" | "vendors" | "enquiries" | "accommodations" | "messes" | "bulk-import"
 
 interface AdminSidebarProps {
   activeTab: AdminTab
@@ -22,6 +23,7 @@ interface AdminSidebarProps {
   isLive: boolean
   onSignOut: () => void
   adminEmail?: string
+  pendingVendorsCount?: number
 }
 
 export function AdminSidebar({
@@ -31,6 +33,7 @@ export function AdminSidebar({
   isLive,
   onSignOut,
   adminEmail = "admin@locano.in",
+  pendingVendorsCount = 0,
 }: AdminSidebarProps) {
   const navItems = [
     {
@@ -38,6 +41,13 @@ export function AdminSidebar({
       label: "Overview",
       icon: LayoutDashboard,
       badge: null,
+    },
+    {
+      id: "vendors" as AdminTab,
+      label: "Vendors",
+      icon: Store,
+      badge: pendingVendorsCount > 0 ? pendingVendorsCount : null,
+      badgeColor: "bg-purple-500 text-white animate-pulse",
     },
     {
       id: "enquiries" as AdminTab,

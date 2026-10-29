@@ -9,9 +9,11 @@ import { AccommodationsView, AccommodationItem } from "@/components/Accommodatio
 import { MessesView, MessItem } from "@/components/MessesView"
 import { BulkImporterView } from "@/components/BulkImporterView"
 import { EditListingModal } from "@/components/EditListingModal"
+import { VendorsView, VendorApplicationItem } from "@/components/VendorsView"
 import { AdminLogin } from "@/components/AdminLogin"
 import { getSupabaseClient, isSupabaseConfigured } from "@/lib/supabase/client"
 import { ParsedAccommodationRow, ParsedMessRow } from "@/lib/csv-helper"
+import type { VendorStatus } from "@/types/database"
 
 export default function AdminPage() {
   const [isMounted, setIsMounted] = useState(false)
@@ -23,13 +25,12 @@ export default function AdminPage() {
   const [notifications, setNotifications] = useState<AdminNotificationItem[]>([])
   const [accommodations, setAccommodations] = useState<AccommodationItem[]>([])
   const [messes, setMesses] = useState<MessItem[]>([])
+  const [vendorApplications, setVendorApplications] = useState<VendorApplicationItem[]>([])
 
   // Modal states
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editItem, setEditItem] = useState<AccommodationItem | MessItem | null>(null)
   const [editMode, setEditMode] = useState<"accommodation" | "mess">("accommodation")
-
-
 
   const handleLoginSuccess = (email: string) => {
     setAdminEmail(email)
@@ -52,6 +53,7 @@ export default function AdminPage() {
 
     if (!supabase) {
       setNotifications([])
+      setVendorApplications([])
       setIsLoading(false)
       return
     }
@@ -88,9 +90,73 @@ export default function AdminPage() {
       if (messData) {
         setMesses(messData as MessItem[])
       }
+
+      // 4. Fetch vendor applications with fallback to profiles table
+      let apps: VendorApplicationItem[] = []
+      try {
+        const { data: vendorData, error: vendorErr } = await supabase
+          .from("vendor_applications")
+          .select("*")
+          .order("created_at", { ascending: false })
+
+        if (!vendorErr && vendorData && vendorData.length > 0) {
+          apps = vendorData as VendorApplicationItem[]
+        }
+      } catch (err) {
+        console.warn("Direct vendor_applications table fetch:", err)
+      }
+
+      // If vendor_applications returned no rows, fallback to querying profiles with vendor role
+      if (apps.length === 0) {
+        try {
+          const { data: vendorProfiles } = await supabase
+            .from("profiles")
+            .select("*")
+            .order("created_at", { ascending: false })
+
+          if (vendorProfiles && vendorProfiles.length > 0) {
+            const matched = vendorProfiles.filter((p) => {
+              const meta = (p.metadata as Record<string, unknown>) || {}
+              return p.role === "vendor" || Boolean(meta.vendor_type) || Boolean(meta.business_name)
+            })
+
+            apps = matched.map((p) => {
+              const meta = (p.metadata as Record<string, unknown>) || {}
+              const isFood = meta.vendor_type === "food_mess_vendor"
+              const status = (meta.vendor_status as VendorStatus) || "pending"
+              return {
+                id: p.id,
+                user_id: p.id,
+                vendor_type: isFood ? "food_mess_vendor" : "pg_vendor",
+                status,
+                business_name:
+                  (meta.business_name as string) ||
+                  (meta.property_name as string) ||
+                  p.full_name ||
+                  "Vendor Business",
+                business_phone: p.phone || "",
+                business_address: (meta.business_address as string) || "",
+                pg_property_name: (meta.pg_property_name as string) || (meta.property_name as string) || null,
+                pg_area: (meta.pg_area as string) || null,
+                pg_gender_preference: (meta.pg_gender_preference as string) || "Co-ed",
+                pg_approximate_rent: (meta.pg_approximate_rent as number) || null,
+                mess_name: (meta.mess_name as string) || (meta.business_name as string) || null,
+                mess_area: (meta.mess_area as string) || null,
+                mess_cuisine: (meta.mess_cuisine as string) || (meta.mess_dietary_type as string) || null,
+                created_at: p.created_at,
+              }
+            })
+          }
+        } catch (profErr) {
+          console.warn("Profile vendor fallback query:", profErr)
+        }
+      }
+
+      setVendorApplications(apps)
     } catch (err) {
       console.error("Error loading admin data:", err)
       setNotifications([])
+      setVendorApplications([])
     } finally {
       setIsLoading(false)
     }
@@ -99,6 +165,7 @@ export default function AdminPage() {
   useEffect(() => {
     const saved = localStorage.getItem("locano_admin_session")
     if (saved) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAdminEmail(saved)
     }
     setIsMounted(true)
@@ -188,6 +255,8 @@ export default function AdminPage() {
         food_option: item.food_option || "Optional",
         status: item.status || "published",
         description: item.description || "",
+        sample_image: item.sample_image || "/hero-coast.png",
+        images: item.sample_image ? [item.sample_image] : [],
       }
 
       setAccommodations((prev) => [newAcc, ...prev])
@@ -207,6 +276,8 @@ export default function AdminPage() {
           food_option: newAcc.food_option,
           status: newAcc.status,
           description: newAcc.description,
+          sample_image: newAcc.sample_image,
+          images: newAcc.images,
           is_demo: false,
         })
 
@@ -223,23 +294,29 @@ export default function AdminPage() {
         prev.map((a) => (a.id === item.id ? ({ ...a, ...item } as AccommodationItem) : a))
       )
       if (supabase) {
+        const updatePayload: Record<string, unknown> = {
+          name: item.name,
+          area: item.area,
+          nearest_landmark: item.nearest_landmark,
+          monthly_rent_from: item.monthly_rent_from,
+          security_deposit: item.security_deposit,
+          gender: item.gender,
+          type: item.type,
+          amenities: item.amenities,
+          sharing_options: item.sharing_options,
+          food_option: item.food_option,
+          status: item.status,
+          description: item.description,
+          is_demo: false,
+          updated_at: new Date().toISOString(),
+        }
+        if (item.sample_image !== undefined) {
+          updatePayload.sample_image = item.sample_image
+          updatePayload.images = item.sample_image ? [item.sample_image] : []
+        }
         const { error } = await supabase
           .from("accommodation_listings")
-          .update({
-            name: item.name,
-            area: item.area,
-            nearest_landmark: item.nearest_landmark,
-            monthly_rent_from: item.monthly_rent_from,
-            security_deposit: item.security_deposit,
-            gender: item.gender,
-            type: item.type,
-            amenities: item.amenities,
-            sharing_options: item.sharing_options,
-            food_option: item.food_option,
-            status: item.status,
-            description: item.description,
-            is_demo: false,
-          })
+          .update(updatePayload)
           .eq("id", item.id)
 
         if (error) {
@@ -302,6 +379,8 @@ export default function AdminPage() {
         meals_served: item.meals_served || ["Breakfast", "Lunch", "Dinner"],
         status: item.status || "published",
         description: item.description || "",
+        sample_image: item.sample_image || "/mess-tiffin.jpg",
+        images: item.sample_image ? [item.sample_image] : [],
       }
 
       setMesses((prev) => [newMess, ...prev])
@@ -320,6 +399,8 @@ export default function AdminPage() {
           meals_served: newMess.meals_served,
           status: newMess.status,
           description: newMess.description,
+          sample_image: newMess.sample_image,
+          images: newMess.images,
           is_demo: false,
         })
 
@@ -334,22 +415,28 @@ export default function AdminPage() {
       // Update existing
       setMesses((prev) => prev.map((m) => (m.id === item.id ? ({ ...m, ...item } as MessItem) : m)))
       if (supabase) {
+        const updatePayload: Record<string, unknown> = {
+          name: item.name,
+          cuisine: item.cuisine,
+          area: item.area,
+          nearest_landmark: item.nearest_landmark,
+          monthly_price_from: item.monthly_price_from,
+          per_meal_price_from: item.per_meal_price_from,
+          dietary: item.dietary,
+          service_type: item.service_type,
+          meals_served: item.meals_served,
+          status: item.status,
+          description: item.description,
+          is_demo: false,
+          updated_at: new Date().toISOString(),
+        }
+        if (item.sample_image !== undefined) {
+          updatePayload.sample_image = item.sample_image
+          updatePayload.images = item.sample_image ? [item.sample_image] : []
+        }
         const { error } = await supabase
           .from("mess_listings")
-          .update({
-            name: item.name,
-            cuisine: item.cuisine,
-            area: item.area,
-            nearest_landmark: item.nearest_landmark,
-            monthly_price_from: item.monthly_price_from,
-            per_meal_price_from: item.per_meal_price_from,
-            dietary: item.dietary,
-            service_type: item.service_type,
-            meals_served: item.meals_served,
-            status: item.status,
-            description: item.description,
-            is_demo: false,
-          })
+          .update(updatePayload)
           .eq("id", item.id)
 
         if (error) {
@@ -358,6 +445,54 @@ export default function AdminPage() {
           return
         }
         await loadData()
+      }
+    }
+  }
+
+  // ==========================================
+  // Direct Image Replacement (without altering other fields)
+  // ==========================================
+  const handleReplaceListingImage = async (
+    id: string,
+    mode: "accommodation" | "mess",
+    imageUrl: string
+  ) => {
+    const supabase = getSupabaseClient()
+    if (mode === "accommodation") {
+      setAccommodations((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, sample_image: imageUrl, images: [imageUrl] } : a))
+      )
+      if (supabase) {
+        const { error } = await supabase
+          .from("accommodation_listings")
+          .update({
+            sample_image: imageUrl,
+            images: [imageUrl],
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", id)
+        if (error) {
+          console.error("Replace accommodation image error:", error)
+          throw new Error("Failed to update accommodation image: " + error.message)
+        }
+      }
+    } else {
+      setMesses((prev) =>
+        prev.map((m) => (m.id === id ? { ...m, sample_image: imageUrl, images: [imageUrl] } : m))
+      )
+      if (supabase) {
+        const { error } = await supabase
+          .from("mess_listings")
+          .update({
+            sample_image: imageUrl,
+            images: [imageUrl],
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", id)
+        if (error) {
+          console.error("Replace mess image error:", error)
+          throw new Error("Failed to update mess image: " + error.message)
+        }
       }
     }
   }
@@ -393,7 +528,7 @@ export default function AdminPage() {
       const batchSize = 25
       for (let i = 0; i < mappedItems.length; i += batchSize) {
         const batch = mappedItems.slice(i, i + batchSize)
-        const { error } = await supabase.from("accommodation_listings").insert(batch as unknown as Parameters<ReturnType<typeof supabase.from>["insert"]>[0])
+        const { error } = await supabase.from("accommodation_listings").insert(batch as unknown as Record<string, unknown>[])
         if (error) {
           console.error("Bulk insert accommodation error:", error)
           alert("Database Error: " + error.message)
@@ -441,7 +576,7 @@ export default function AdminPage() {
       const batchSize = 25
       for (let i = 0; i < mappedItems.length; i += batchSize) {
         const batch = mappedItems.slice(i, i + batchSize)
-        const { error } = await supabase.from("mess_listings").insert(batch as unknown as Parameters<ReturnType<typeof supabase.from>["insert"]>[0])
+        const { error } = await supabase.from("mess_listings").insert(batch as unknown as Record<string, unknown>[])
         if (error) {
           console.error("Bulk insert mess error:", error)
           alert("Database Error: " + error.message)
@@ -463,6 +598,29 @@ export default function AdminPage() {
     return { success: items.length, failed: 0 }
   }
 
+  const handleUpdateVendorStatus = async (id: string, status: VendorStatus) => {
+    setVendorApplications((prev) =>
+      prev.map((app) => (app.id === id ? { ...app, status, reviewed_at: new Date().toISOString() } : app))
+    )
+    const supabase = getSupabaseClient()
+    if (supabase) {
+      const { error } = await supabase
+        .from("vendor_applications")
+        .update({
+          status,
+          reviewed_at: new Date().toISOString(),
+        })
+        .eq("id", id)
+
+      if (error) {
+        console.error("Update vendor application error:", error)
+        alert("Database Error: " + error.message)
+      } else {
+        await loadData()
+      }
+    }
+  }
+
   if (!isMounted) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-slate-950 text-slate-400">
@@ -478,6 +636,7 @@ export default function AdminPage() {
 
   // Counts
   const unreadCount = notifications.filter((n) => !n.read).length
+  const pendingVendorsCount = vendorApplications.filter((v) => v.status === "pending").length
   const publishedAccCount = accommodations.filter((a) => a.status === "published").length
   const pendingAccCount = accommodations.filter((a) => a.status === "pending").length
   const publishedMessCount = messes.filter((m) => m.status === "published").length
@@ -491,6 +650,7 @@ export default function AdminPage() {
         setActiveTab={setActiveTab}
         unreadCount={unreadCount}
         totalEnquiries={notifications.length}
+        pendingVendorsCount={pendingVendorsCount}
         isLive={isSupabaseConfigured()}
         onSignOut={handleSignOut}
         adminEmail={adminEmail}
@@ -506,7 +666,7 @@ export default function AdminPage() {
               <div>
                 <h1 className="text-2xl font-extrabold text-white tracking-tight">Admin Overview</h1>
                 <p className="text-xs text-slate-400 mt-1">
-                  Live snapshot of student enquiries, accommodations, and messes.
+                  Live snapshot of student enquiries, vendor applications, accommodations, and messes.
                 </p>
               </div>
 
@@ -520,8 +680,41 @@ export default function AdminPage() {
                 pendingMesses={pendingMessCount}
                 unreadEnquiries={unreadCount}
                 totalEnquiries={notifications.length}
+                totalVendors={vendorApplications.length}
+                pendingVendors={pendingVendorsCount}
                 onNavigate={(tab) => setActiveTab(tab)}
               />
+
+              {/* Pending Vendor Applications Preview on Overview */}
+              {pendingVendorsCount > 0 && (
+                <div className="mt-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                        <span>Pending Vendor Applications</span>
+                        <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          {pendingVendorsCount} Needs Review
+                        </span>
+                      </h2>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        New vendor registration forms pending admin approval.
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setActiveTab("vendors")}
+                      className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors"
+                    >
+                      View all vendors ({vendorApplications.length}) →
+                    </button>
+                  </div>
+                  <VendorsView
+                    applications={vendorApplications.filter((a) => a.status === "pending")}
+                    onUpdateStatus={handleUpdateVendorStatus}
+                    onRefresh={loadData}
+                    isLoading={isLoading}
+                  />
+                </div>
+              )}
 
               {/* Recent Enquiries Preview */}
               <div className="mt-8">
@@ -535,6 +728,15 @@ export default function AdminPage() {
                 />
               </div>
             </div>
+          )}
+
+          {activeTab === "vendors" && (
+            <VendorsView
+              applications={vendorApplications}
+              onUpdateStatus={handleUpdateVendorStatus}
+              onRefresh={loadData}
+              isLoading={isLoading}
+            />
           )}
 
           {activeTab === "enquiries" && (
@@ -564,6 +766,7 @@ export default function AdminPage() {
                 setIsEditModalOpen(true)
               }}
               onNavigateBulk={() => setActiveTab("bulk-import")}
+              onReplaceImage={(id, url) => handleReplaceListingImage(id, "accommodation", url)}
               isLoading={isLoading}
             />
           )}
@@ -584,6 +787,7 @@ export default function AdminPage() {
                 setIsEditModalOpen(true)
               }}
               onNavigateBulk={() => setActiveTab("bulk-import")}
+              onReplaceImage={(id, url) => handleReplaceListingImage(id, "mess", url)}
               isLoading={isLoading}
             />
           )}
@@ -606,6 +810,7 @@ export default function AdminPage() {
         mode={editMode}
         onSaveAccommodation={handleSaveAccommodation}
         onSaveMess={handleSaveMess}
+        onReplaceListingImage={handleReplaceListingImage}
       />
     </div>
   )

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Lock, Mail, ArrowRight, Loader2, Sparkles } from "lucide-react"
+import { Lock, Mail, ArrowRight, Loader2 } from "lucide-react"
 import { getSupabaseClient } from "@/lib/supabase/client"
 
 interface AdminLoginProps {
@@ -20,9 +20,24 @@ export function AdminLogin({ onSuccess }: AdminLoginProps) {
     setError(null)
 
     const supabase = getSupabaseClient()
+
+    // 1. Direct Master Admin Authentication
+    const masterEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "azhar@gmail.com").trim().toLowerCase()
+    const masterPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "amnasmuthpassword"
+
+    if (email.trim().toLowerCase() === masterEmail && password === masterPassword) {
+      if (supabase) {
+        // Try establishing supabase auth session in background if account exists
+        await supabase.auth.signInWithPassword({ email: masterEmail, password: masterPassword }).catch(() => {})
+      }
+      onSuccess(masterEmail)
+      setIsLoading(false)
+      return
+    }
+
     if (!supabase) {
       // Offline fallback: allow local access
-      onSuccess(email || "admin@locano.in")
+      onSuccess(email || "azhar@gmail.com")
       setIsLoading(false)
       return
     }
@@ -55,10 +70,6 @@ export function AdminLogin({ onSuccess }: AdminLoginProps) {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleQuickDemo = () => {
-    onSuccess("admin@locano.in")
   }
 
   return (
@@ -135,19 +146,6 @@ export function AdminLogin({ onSuccess }: AdminLoginProps) {
             )}
           </button>
         </form>
-
-        {/* Quick Demo Bypass */}
-        <div className="mt-6 pt-6 border-t border-slate-800 text-center">
-          <p className="text-[11px] text-slate-400 mb-3">Testing or developing locally?</p>
-          <button
-            type="button"
-            onClick={handleQuickDemo}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-xs font-semibold text-indigo-300 border border-slate-700 transition-colors"
-          >
-            <Sparkles className="h-3.5 w-3.5 text-teal-400" />
-            Direct Administrator Access
-          </button>
-        </div>
       </div>
     </div>
   )

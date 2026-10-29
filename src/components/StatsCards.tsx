@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { Home, UtensilsCrossed, Bell, CheckCircle2 } from "lucide-react"
+import { Home, UtensilsCrossed, Bell, Store, CheckCircle2 } from "lucide-react"
 
 interface StatsCardsProps {
   totalAccommodations: number
@@ -12,7 +12,9 @@ interface StatsCardsProps {
   pendingMesses: number
   unreadEnquiries: number
   totalEnquiries: number
-  onNavigate: (tab: "enquiries" | "accommodations" | "messes") => void
+  totalVendors?: number
+  pendingVendors?: number
+  onNavigate: (tab: "overview" | "vendors" | "enquiries" | "accommodations" | "messes") => void
 }
 
 export function StatsCards({
@@ -24,9 +26,22 @@ export function StatsCards({
   pendingMesses,
   unreadEnquiries,
   totalEnquiries,
+  totalVendors = 0,
+  pendingVendors = 0,
   onNavigate,
 }: StatsCardsProps) {
   const cards = [
+    {
+      title: "Vendor Applications",
+      count: totalVendors,
+      subtext: `${pendingVendors} Pending Approval`,
+      subtextColor: pendingVendors > 0 ? "text-amber-400 font-semibold" : "text-slate-400",
+      icon: Store,
+      iconColor: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+      gradient: "from-purple-500/10 to-transparent",
+      action: () => onNavigate("vendors"),
+      actionLabel: "Review applications",
+    },
     {
       title: "Student Enquiries",
       count: totalEnquiries,
@@ -63,7 +78,7 @@ export function StatsCards({
   ]
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
       {cards.map((card, idx) => {
         const Icon = card.icon
         return (

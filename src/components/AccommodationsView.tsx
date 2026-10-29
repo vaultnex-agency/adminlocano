@@ -11,7 +11,10 @@ import {
   Edit2,
   Trash2,
   MapPin,
+  Camera,
+  Loader2,
 } from "lucide-react"
+import { uploadListingImage, validateImageFile } from "@/lib/supabase/storage"
 
 export interface AccommodationItem {
   id: string
@@ -26,6 +29,7 @@ export interface AccommodationItem {
   food_option?: string
   status: "published" | "pending" | "rejected" | "archived"
   sample_image?: string | null
+  images?: string[]
   nearest_landmark?: string
   created_at?: string
   description?: string
@@ -38,6 +42,7 @@ interface AccommodationsViewProps {
   onEdit: (item: AccommodationItem) => void
   onAddNew: () => void
   onNavigateBulk: () => void
+  onReplaceImage?: (id: string, imageUrl: string) => Promise<void>
   isLoading: boolean
 }
 
@@ -48,8 +53,10 @@ export function AccommodationsView({
   onEdit,
   onAddNew,
   onNavigateBulk,
+  onReplaceImage,
 }: AccommodationsViewProps) {
   const [search, setSearch] = useState("")
+  const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [genderFilter, setGenderFilter] = useState<string>("all")
 
@@ -64,6 +71,26 @@ export function AccommodationsView({
       (item.nearest_landmark && item.nearest_landmark.toLowerCase().includes(q))
     )
   })
+
+  const handleQuickUpload = async (id: string, file: File) => {
+    const val = validateImageFile(file)
+    if (!val.valid) {
+      alert(val.error || "Invalid file format or size.")
+      return
+    }
+    setUploadingId(id)
+    try {
+      const { publicUrl } = await uploadListingImage(file, "accommodations", id)
+      if (onReplaceImage) {
+        await onReplaceImage(id, publicUrl)
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Upload failed."
+      alert("Image update error: " + msg)
+    } finally {
+      setUploadingId(null)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -164,13 +191,48 @@ export function AccommodationsView({
               {filtered.map((item) => {
                 return (
                   <tr key={item.id} className="hover:bg-slate-800/30 transition-colors">
-                    {/* Name */}
+                    {/* Name & Photo */}
                     <td className="py-3.5 px-4">
-                      <div>
-                        <span className="font-semibold text-slate-100 block">{item.name}</span>
-                        <span className="text-[11px] text-slate-400 block mt-0.5">
-                          {item.amenities?.slice(0, 3).join(" · ")}
-                        </span>
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-11 h-11 rounded-xl overflow-hidden bg-slate-800 border border-slate-700/60 shrink-0 group">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={item.sample_image || (item.images && item.images[0]) || "/hero-coast.png"}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement
+                              target.src = "/hero-coast.png"
+                            }}
+                          />
+                          {uploadingId === item.id ? (
+                            <div className="absolute inset-0 bg-slate-950/80 flex items-center justify-center">
+                              <Loader2 className="w-4 h-4 text-indigo-400 animate-spin" />
+                            </div>
+                          ) : onReplaceImage ? (
+                            <label
+                              className="absolute inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer text-white"
+                              title="Click to replace image (.jpg, .jpeg, .png)"
+                            >
+                              <Camera className="w-4 h-4 text-slate-200 hover:text-indigo-400" />
+                              <input
+                                type="file"
+                                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) void handleQuickUpload(item.id, file)
+                                }}
+                              />
+                            </label>
+                          ) : null}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="font-semibold text-slate-100 block truncate">{item.name}</span>
+                          <span className="text-[11px] text-slate-400 block mt-0.5 truncate">
+                            {item.amenities?.slice(0, 3).join(" · ") || "No amenities listed"}
+                          </span>
+                        </div>
                       </div>
                     </td>
 
