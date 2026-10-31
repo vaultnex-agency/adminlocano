@@ -370,17 +370,38 @@ export function EditListingModal({
           mealsServedSet.add("Dinner")
         }
 
-        // Clean structured JSONB objects
+        // Clean structured JSONB objects (stores both camelCase & snake_case for 100% interoperability)
         const cleanMealsPerDayPricing = {
+          oneMealPrice: modelA.oneMealPrice ? Number(modelA.oneMealPrice) : null,
           one_meal_price: modelA.oneMealPrice ? Number(modelA.oneMealPrice) : null,
+          twoMealsPrice: modelA.twoMealsPrice ? Number(modelA.twoMealsPrice) : null,
           two_meals_price: modelA.twoMealsPrice ? Number(modelA.twoMealsPrice) : null,
+          threeMealsPrice: modelA.threeMealsPrice ? Number(modelA.threeMealsPrice) : null,
           three_meals_price: modelA.threeMealsPrice ? Number(modelA.threeMealsPrice) : null,
+          hasGroupPricing: Boolean(modelA.hasGroupPricing),
           has_group_pricing: Boolean(modelA.hasGroupPricing),
+          groupPricing: modelA.hasGroupPricing
+            ? {
+                oneMealPrice: modelA.groupOneMealPrice ? Number(modelA.groupOneMealPrice) : null,
+                one_meal_price: modelA.groupOneMealPrice ? Number(modelA.groupOneMealPrice) : null,
+                twoMealsPrice: modelA.groupTwoMealsPrice ? Number(modelA.groupTwoMealsPrice) : null,
+                two_meals_price: modelA.groupTwoMealsPrice ? Number(modelA.groupTwoMealsPrice) : null,
+                threeMealsPrice: modelA.groupThreeMealsPrice ? Number(modelA.groupThreeMealsPrice) : null,
+                three_meals_price: modelA.groupThreeMealsPrice ? Number(modelA.groupThreeMealsPrice) : null,
+                groupSize: 5,
+                group_size: 5,
+                notes: modelA.groupNotes || "5-person group pricing tier",
+              }
+            : null,
           group_pricing: modelA.hasGroupPricing
             ? {
+                oneMealPrice: modelA.groupOneMealPrice ? Number(modelA.groupOneMealPrice) : null,
                 one_meal_price: modelA.groupOneMealPrice ? Number(modelA.groupOneMealPrice) : null,
+                twoMealsPrice: modelA.groupTwoMealsPrice ? Number(modelA.groupTwoMealsPrice) : null,
                 two_meals_price: modelA.groupTwoMealsPrice ? Number(modelA.groupTwoMealsPrice) : null,
+                threeMealsPrice: modelA.groupThreeMealsPrice ? Number(modelA.groupThreeMealsPrice) : null,
                 three_meals_price: modelA.groupThreeMealsPrice ? Number(modelA.groupThreeMealsPrice) : null,
+                groupSize: 5,
                 group_size: 5,
                 notes: modelA.groupNotes || "5-person group pricing tier",
               }
@@ -388,12 +409,19 @@ export function EditListingModal({
         }
 
         const cleanMealCombinationsPricing = {
+          breakfastOnly: modelB.breakfastOnly ? Number(modelB.breakfastOnly) : null,
           breakfast_only: modelB.breakfastOnly ? Number(modelB.breakfastOnly) : null,
+          lunchOnly: modelB.lunchOnly ? Number(modelB.lunchOnly) : null,
           lunch_only: modelB.lunchOnly ? Number(modelB.lunchOnly) : null,
+          dinnerOnly: modelB.dinnerOnly ? Number(modelB.dinnerOnly) : null,
           dinner_only: modelB.dinnerOnly ? Number(modelB.dinnerOnly) : null,
+          breakfastLunch: modelB.breakfastLunch ? Number(modelB.breakfastLunch) : null,
           breakfast_lunch: modelB.breakfastLunch ? Number(modelB.breakfastLunch) : null,
+          breakfastDinner: modelB.breakfastDinner ? Number(modelB.breakfastDinner) : null,
           breakfast_dinner: modelB.breakfastDinner ? Number(modelB.breakfastDinner) : null,
+          lunchDinner: modelB.lunchDinner ? Number(modelB.lunchDinner) : null,
           lunch_dinner: modelB.lunchDinner ? Number(modelB.lunchDinner) : null,
+          allThree: modelB.allThree ? Number(modelB.allThree) : null,
           all_three: modelB.allThree ? Number(modelB.allThree) : null,
         }
 
