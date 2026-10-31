@@ -49,6 +49,8 @@ export interface Database {
           id: string; owner_id: string | null; name: string; tagline: string
           cuisine: string; dietary: DietaryType; service_type: ServiceType
           area: string; approximate_location: string; nearest_landmark: string
+          pricing_type: string; meals_per_day_pricing: Json; meal_combinations_pricing: Json
+          weekly_holidays: string[]
           monthly_price_from: number; per_meal_price_from: number
           meals_served: string[]; meal_plans: Json; daily_menu_sample: Json
           timings: Json; highlights: string[]; kitchen_features: string[]

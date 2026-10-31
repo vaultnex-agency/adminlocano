@@ -25,6 +25,13 @@ export interface ParsedMessRow {
   cuisine?: string
   dietary: "Pure Veg" | "Veg & Non-Veg"
   service_type: "Dine-in Mess" | "Tiffin & Delivery" | "Dine-in & Delivery"
+  pricing_type?: "meals_per_day" | "meal_combinations"
+  weekly_holidays?: string[]
+  timings?: {
+    breakfast?: string
+    lunch?: string
+    dinner?: string
+  }
   area: string
   approximate_location?: string
   nearest_landmark?: string
@@ -198,6 +205,11 @@ export function parseMessCSV(csvText: string, defaultStatus: "published" | "pend
   const descriptionIdx = colIndex(["description", "desc"])
   const imageIdx = colIndex(["sampleimage", "image", "photo"])
   const statusIdx = colIndex(["status"])
+  const pricingTypeIdx = colIndex(["pricingtype", "pricingmodel", "pricing"])
+  const holidaysIdx = colIndex(["weeklyholidays", "holidays", "offdays", "weeklyoff"])
+  const bTimingIdx = colIndex(["breakfasttiming", "breakfasttime", "breakfast"])
+  const lTimingIdx = colIndex(["lunchtiming", "lunchtime", "lunch"])
+  const dTimingIdx = colIndex(["dinnertiming", "dinnertime", "dinner"])
 
   if (nameIdx === -1 || areaIdx === -1 || priceIdx === -1) {
     throw new Error("CSV must include columns for Name, Area, and Monthly Price (monthly_price_from).")
@@ -231,9 +243,26 @@ export function parseMessCSV(csvText: string, defaultStatus: "published" | "pend
     const rawMeals = row[mealsIdx] || "Breakfast, Lunch, Dinner"
     const meals_served = rawMeals.split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
 
+    const rawPricingType = pricingTypeIdx !== -1 ? (row[pricingTypeIdx] || "").toLowerCase() : ""
+    const pricing_type: "meals_per_day" | "meal_combinations" = rawPricingType.includes("comb") ? "meal_combinations" : "meals_per_day"
+
+    const weekly_holidays = holidaysIdx !== -1 && row[holidaysIdx]
+      ? row[holidaysIdx].split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
+      : []
+
+    const breakfastTiming = bTimingIdx !== -1 && row[bTimingIdx] ? row[bTimingIdx].trim() : undefined
+    const lunchTiming = lTimingIdx !== -1 && row[lTimingIdx] ? row[lTimingIdx].trim() : undefined
+    const dinnerTiming = dTimingIdx !== -1 && row[dTimingIdx] ? row[dTimingIdx].trim() : undefined
+    const timings = (breakfastTiming || lunchTiming || dinnerTiming)
+      ? { breakfast: breakfastTiming, lunch: lunchTiming, dinner: dinnerTiming }
+      : undefined
+
     items.push({
       name,
       area,
+      pricing_type,
+      weekly_holidays,
+      timings,
       monthly_price_from: priceVal,
       per_meal_price_from: Math.round(priceVal / 60),
       dietary,
@@ -256,7 +285,7 @@ export const SAMPLE_ACCOMMODATIONS_CSV = `name,type,gender,area,nearest_landmark
 "Sunshine PG for Boys",PG,Boys,"Tiger Circle","Above Syndicate Bank",8000,16000,"Double; Triple","Wi-Fi, Power Backup, RO Drinking Water, Daily Cleaning","Optional / Available","Affordable and centrally located right at Tiger Circle bus stop.",published
 "Coastal Breeze Girls PG",PG,Girls,"End Point Road","Near TAPMI Campus",9000,18000,"Single; Double","Wi-Fi, Security Guard, Solar Water Heater, Study Lounge","2 Meals Included (Breakfast & Dinner)","Scenic greenery view, peaceful reading atmosphere with spacious rooms.",published`
 
-export const SAMPLE_MESS_CSV = `name,cuisine,dietary,service_type,area,nearest_landmark,monthly_price_from,per_meal_price_from,meals_served,description,status
-"Annapoorna Coastal Mess","South Indian & Coastal","Pure Veg","Dine-in Mess","Tiger Circle","Opposite Bus Stand",3200,60,"Breakfast, Lunch, Dinner","Authentic Udupi style vegetarian unlimited meals. Fresh coconut chutneys and hot sambar.",published
-"Malabar Treats & Tiffin","Kerala & Coastal","Veg & Non-Veg","Dine-in & Delivery","Saralebettu Road","Near MIT Gate 1",3800,75,"Lunch, Dinner","Specializes in authentic Malabar biryanis, fish curry meals, and daily tiffin boxes.",published
-"Swadisht North Indian Bhojnalaya","North Indian Punjabi","Pure Veg","Dine-in Mess","Vidyaratna Nagar","Near Syndicate Bank",3400,65,"Lunch, Dinner","Unlimited phulkas with ghee, seasonal sabzis, dal tadka, and homestyle chaas.",published`
+export const SAMPLE_MESS_CSV = `name,cuisine,dietary,service_type,area,nearest_landmark,pricing_type,monthly_price_from,per_meal_price_from,meals_served,breakfast_timing,lunch_timing,dinner_timing,weekly_holidays,description,status
+"Annapoorna Coastal Mess","South Indian & Coastal","Pure Veg","Dine-in Mess","Tiger Circle","Opposite Bus Stand",meals_per_day,1900,60,"Breakfast, Lunch, Dinner","7:30 AM - 10:00 AM","12:30 PM - 3:00 PM","7:30 PM - 10:00 PM",Sunday,"Authentic Udupi style vegetarian unlimited meals. Fresh coconut chutneys and hot sambar.",published
+"Malabar Treats & Tiffin","Kerala & Coastal","Veg & Non-Veg","Dine-in & Delivery","Saralebettu Road","Near MIT Gate 1",meal_combinations,2200,75,"Breakfast, Lunch, Dinner","8:00 AM - 10:30 AM","1:00 PM - 3:30 PM","8:00 PM - 10:30 PM",,"Specializes in authentic Malabar biryanis, fish curry meals, and daily tiffin boxes.",published
+"Swadisht North Indian Bhojnalaya","North Indian Punjabi","Pure Veg","Dine-in Mess","Vidyaratna Nagar","Near Syndicate Bank",meals_per_day,2100,65,"Lunch, Dinner",,"12:00 PM - 3:00 PM","7:30 PM - 10:00 PM",Sunday,"Unlimited phulkas with ghee, seasonal sabzis, dal tadka, and homestyle chaas.",published`

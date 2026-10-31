@@ -391,7 +391,13 @@ export default function AdminPage() {
         name: item.name || "Untitled Mess",
         cuisine: item.cuisine || "South Indian",
         area: item.area || "Tiger Circle",
+        approximate_location: item.approximate_location || item.area || "",
         nearest_landmark: item.nearest_landmark || "",
+        pricing_type: item.pricing_type || "meals_per_day",
+        meals_per_day_pricing: item.meals_per_day_pricing,
+        meal_combinations_pricing: item.meal_combinations_pricing,
+        weekly_holidays: item.weekly_holidays || [],
+        timings: item.timings,
         monthly_price_from: item.monthly_price_from || 3000,
         per_meal_price_from: item.per_meal_price_from || 60,
         dietary: item.dietary || "Pure Veg",
@@ -411,7 +417,13 @@ export default function AdminPage() {
           name: newMess.name,
           cuisine: newMess.cuisine,
           area: newMess.area,
+          approximate_location: newMess.approximate_location,
           nearest_landmark: newMess.nearest_landmark,
+          pricing_type: newMess.pricing_type,
+          meals_per_day_pricing: newMess.meals_per_day_pricing,
+          meal_combinations_pricing: newMess.meal_combinations_pricing,
+          weekly_holidays: newMess.weekly_holidays,
+          timings: newMess.timings,
           monthly_price_from: newMess.monthly_price_from,
           per_meal_price_from: newMess.per_meal_price_from,
           dietary: newMess.dietary,
@@ -450,6 +462,12 @@ export default function AdminPage() {
           is_demo: false,
           updated_at: new Date().toISOString(),
         }
+        if (item.pricing_type !== undefined) updatePayload.pricing_type = item.pricing_type
+        if (item.meals_per_day_pricing !== undefined) updatePayload.meals_per_day_pricing = item.meals_per_day_pricing
+        if (item.meal_combinations_pricing !== undefined) updatePayload.meal_combinations_pricing = item.meal_combinations_pricing
+        if (item.weekly_holidays !== undefined) updatePayload.weekly_holidays = item.weekly_holidays
+        if (item.timings !== undefined) updatePayload.timings = item.timings
+        if (item.approximate_location !== undefined) updatePayload.approximate_location = item.approximate_location
         if (item.sample_image !== undefined) {
           updatePayload.sample_image = item.sample_image
           updatePayload.images = item.sample_image ? [item.sample_image] : []
@@ -578,7 +596,11 @@ export default function AdminPage() {
       name: r.name,
       cuisine: r.cuisine || "South Indian & Coastal",
       area: r.area,
+      approximate_location: r.approximate_location || r.area,
       nearest_landmark: r.nearest_landmark || "",
+      pricing_type: r.pricing_type || "meals_per_day",
+      weekly_holidays: r.weekly_holidays || [],
+      timings: r.timings,
       monthly_price_from: r.monthly_price_from,
       per_meal_price_from: r.per_meal_price_from || Math.round(r.monthly_price_from / 60),
       dietary: r.dietary,
