@@ -21,34 +21,21 @@ export function AdminLogin({ onSuccess }: AdminLoginProps) {
 
     const supabase = getSupabaseClient()
 
-    // 1. Direct Master Admin Authentication
-    const masterEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "azhar@gmail.com").trim().toLowerCase()
-    const masterPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "amnasmuthpassword"
-
-    if (email.trim().toLowerCase() === masterEmail && password === masterPassword) {
-      if (supabase) {
-        // Try establishing supabase auth session in background if account exists
-        await supabase.auth.signInWithPassword({ email: masterEmail, password: masterPassword }).catch(() => {})
-      }
-      onSuccess(masterEmail)
-      setIsLoading(false)
-      return
-    }
-
     if (!supabase) {
-      // Offline fallback: allow local access
-      onSuccess(email || "azhar@gmail.com")
+      setError("Database service is not configured. Please configure Supabase environment variables.")
       setIsLoading(false)
       return
     }
 
     try {
+      // Authenticate strictly via Supabase Auth
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim().toLowerCase(),
         password,
       })
 
       if (authError) throw authError
+      if (!data.user) throw new Error("No user session returned from authentication service.")
 
       // Verify admin role in profiles table
       const { data: profile, error: profileError } = await supabase
@@ -58,12 +45,12 @@ export function AdminLogin({ onSuccess }: AdminLoginProps) {
         .single()
 
       if (profileError || profile?.role !== "admin") {
-        // Sign out if not admin
+        // Sign out immediately if not an admin
         await supabase.auth.signOut()
-        throw new Error("This account does not have Admin privileges in the profiles table.")
+        throw new Error("Access denied: This account does not have Administrator privileges in the profiles table.")
       }
 
-      onSuccess(data.user.email || email)
+      onSuccess(data.user.email || email.trim().toLowerCase())
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Authentication failed."
       setError(msg)

@@ -34,7 +34,6 @@ export default function AdminPage() {
 
   const handleLoginSuccess = (email: string) => {
     setAdminEmail(email)
-    localStorage.setItem("locano_admin_session", email)
   }
 
   const handleSignOut = async () => {
@@ -42,7 +41,6 @@ export default function AdminPage() {
     if (supabase) {
       await supabase.auth.signOut().catch(() => {})
     }
-    localStorage.removeItem("locano_admin_session")
     setAdminEmail(null)
   }
 
@@ -163,12 +161,34 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => {
-    const saved = localStorage.getItem("locano_admin_session")
-    if (saved) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setAdminEmail(saved)
+    async function checkExistingSession() {
+      const supabase = getSupabaseClient()
+      if (supabase) {
+        try {
+          const { data: { user }, error } = await supabase.auth.getUser()
+          if (!error && user) {
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("role")
+              .eq("id", user.id)
+              .single()
+
+            if (profile?.role === "admin") {
+              setAdminEmail(user.email || "admin")
+              setIsMounted(true)
+              return
+            }
+            await supabase.auth.signOut().catch(() => {})
+          }
+        } catch {
+          // Ignore network errors
+        }
+      }
+      setAdminEmail(null)
+      setIsMounted(true)
     }
-    setIsMounted(true)
+
+    void checkExistingSession()
   }, [])
 
   useEffect(() => {
@@ -704,7 +724,7 @@ export default function AdminPage() {
                       onClick={() => setActiveTab("vendors")}
                       className="text-xs font-semibold text-purple-400 hover:text-purple-300 transition-colors"
                     >
-                      View all vendors ({vendorApplications.length}) →
+                      View all vendors ({vendorApplications.length}) â†’
                     </button>
                   </div>
                   <VendorsView

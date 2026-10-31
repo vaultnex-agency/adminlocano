@@ -63,15 +63,11 @@ export function validateImageFile(file: File): ValidationResult {
 
 /**
  * Ensures the current session belongs to an authorized admin before upload.
+ * Strictly verifies authenticated user session and 'admin' role in Supabase profiles.
  */
 export async function ensureAdminAuthorized(): Promise<{ authorized: boolean; error?: string }> {
   const supabase = getSupabaseClient()
   if (!supabase) {
-    // Check local admin session for local development
-    if (typeof window !== "undefined") {
-      const localSession = localStorage.getItem("locano_admin_session")
-      if (localSession) return { authorized: true }
-    }
     return { authorized: false, error: "Supabase client is not configured." }
   }
 
@@ -82,11 +78,6 @@ export async function ensureAdminAuthorized(): Promise<{ authorized: boolean; er
     } = await supabase.auth.getUser()
 
     if (authError || !user) {
-      // Check local session fallback for offline/demo admin
-      if (typeof window !== "undefined") {
-        const localSession = localStorage.getItem("locano_admin_session")
-        if (localSession) return { authorized: true }
-      }
       return {
         authorized: false,
         error: "Unauthorized: You must be logged in as an administrator to upload images.",
@@ -100,12 +91,6 @@ export async function ensureAdminAuthorized(): Promise<{ authorized: boolean; er
       .single()
 
     if (profileError || profile?.role !== "admin") {
-      if (typeof window !== "undefined") {
-        const localSession = localStorage.getItem("locano_admin_session")
-        if (localSession && (localSession.toLowerCase() === "azhar@gmail.com" || localSession.toLowerCase().startsWith("admin"))) {
-          return { authorized: true }
-        }
-      }
       return {
         authorized: false,
         error: "Access denied: Your account does not have Admin privileges in the profiles table.",
