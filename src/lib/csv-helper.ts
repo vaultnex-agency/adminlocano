@@ -161,9 +161,9 @@ export function parseAccommodationCSV(csvText: string, defaultStatus: "published
       security_deposit:
         depositIdx !== -1
           ? (() => {
-              const val = parseInt(row[depositIdx]?.replace(/[^0-9]/g, "") || "0", 10)
-              return val > 0 && val <= 100000 ? val : rentVal * 2
-            })()
+            const val = parseInt(row[depositIdx]?.replace(/[^0-9]/g, "") || "0", 10)
+            return val > 0 && val <= 100000 ? val : rentVal * 2
+          })()
           : rentVal * 2,
       type,
       amenities,
